@@ -7,8 +7,6 @@ jq
 <br>
 lynx
 <br>
-pcegrep
-<br>
 pv
 ## Compiling
 Idk, just run this and stick the binary in your bin folder.
