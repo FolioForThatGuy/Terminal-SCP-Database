@@ -1,10 +1,9 @@
 #!/bin/bash
 function slowtype() {
 local text=$(tr -d '\0' < $1)
-local speed=$2
 for ((i=0;i<${#text};i++));
   do
-      sleep 0.0$(((RANDOM%$speed)+0))
+      sleep 0.0$(((RANDOM%$SCPSETTINGSSPEED)+0))
       echo -n "${text:i:1}";
 done
 }
@@ -14,7 +13,7 @@ function trap_ctrlc ()
 	echo ""
 	echo "Disconnected from database"
 	echo ""
-	if [ $offline == True ]; then
+	if [ $SCPSETTINGSOFFLINE == False ]; then
 		rm  "$FILE/tmp/$SCPNo)" "$FILE/tmp/$SCPNo"
 	fi
 	stty echo
@@ -28,15 +27,11 @@ fi
 if [ ! -d "$FILE/offline" ]; then
 		mkdir "$FILE/offline";
 fi
-if ! [ -f "$FILE/settings" ]; then
-	touch $FILE/settings
-	jq -n '{"speed":50, "offline": true}' > $FILE/settings
-fi
-speed=$(jq '.speed' $FILE/settings)
-offline=$(jq '.offline' $FILE/settings)
+export SCPSETTINGSSPEED=5
+export SCPSETTINGSOFFLINE=True
 if [[ $1 == -h ]] || [[ $1 == --help ]]; then
 	echo "Use:"
-	echo "$0 [scp Number]"
+	echo "$0 [SCP Entry Number]"
 	echo "$0 --settings"
 	echo "$0 -s"
 	echo "$0 -s speed"
@@ -47,19 +42,38 @@ if [[ $1 == -s ]] || [[ $1 == --settings ]]; then
 	if  [ -z $2 ]; then
 		echo ""
 		echo "		 $0 $1 speed 		Sets the speed text is written to the screen (lower is faster)"
-		echo "		 $0 $1 offline		Changes storage settings"
+		echo "		 $0 $1 offline		Changes whether scp are storred on drive or not"
 		echo ""
 		exit
 	elif [ $2 == "offline" ]; then
-		read -p "Do you want to store SCP documents offline? [true or false] " write
+		read -p "Do you want to store SCP entries offline? [true or false] " write
 		case $write in
-		"true" | "T" | "t" | "True")
-		echo "Offline set to true. Now when you open scp documents they will be saved to your hard drive."
-		cat <<< $(jq ".offline = true" $FILE/settings) >  $FILE/settings
+		"true" | "T" | "t" | "True" | "yes" | "y" | "Yes")
+		echo "Offline set to true. Now when you open SCP entries they will be saved to your drive."
+		export SCPSETTINGSOFFLINE=True
 		;;
-		"false" | "f" | "F" | "False")
-		echo "Offline set to false. Scp documents will no longer be saved to your hard drive. Previous instances of documents will be kept however."
-		cat <<< $(jq ".offline = false" $FILE/settings) >  $FILE/settings
+		"false" | "f" | "F" | "False"| "no" | "n" | "No")
+		echo "Offline set to false. SCP entries will no longer be saved to your hard drive."
+		export SCPSETTINGSOFFLINE=False
+		if [ "yes" == "yes" ]; then
+			echo ""
+			read -p "Would you like to DELETE previously storred entries? [yes or no] " storage
+			case $storage in
+			"true" | "T" | "t" | "True" | "yes" | "y" | "Yes")
+			rm $FILE/offline/*
+			echo "Local SCP entries have been deleted"
+			echo ""
+			;;
+			"false" | "f" | "F" | "False"| "no" | "n" | "No")
+			echo ""
+			;;
+			*)
+			echo
+				echo "Invalid input"
+				echo
+				;;
+				esac
+			fi
 		;;
 		*)
 		  echo
@@ -70,7 +84,7 @@ if [[ $1 == -s ]] || [[ $1 == --settings ]]; then
 		exit
 	elif [ $2 == "speed" ]; then
 		read -p "What speed do you want text to be printed?: " write
-		cat <<< $(jq ".speed = $write" $FILE/settings) >  $FILE/settings
+		export SCPSETTINGSSPEED=$write
 		exit
 	fi
 fi
@@ -81,24 +95,24 @@ if ! [ -z $1 ]; then
 else
 	read -p "What SCP would you like?: " SCPNo
 fi
-if [ $offline == true ]; then
-	if [ -f "$FILE/offline/$SCPNo" ]; then
+if [ -f "$FILE/offline/$SCPNo" ]; then
 		echo "   Item #: SCP-$SCPNo"
-		slowtype $FILE/offline/$SCPNo $speed
-	else
+		slowtype $FILE/offline/$SCPNo $SCPSETTINGSSPEED
+fi
+if [ $SCPSETTINGSOFFLINE == True ]; then
 		echo "   Item #: SCP-$SCPNo"
-	  lynx -dump -nolist http://www.scpwiki.com/scp-$SCPNo > $FILE/tmp/$SCPNo
+	 	lynx -dump -nolist http://www.scpwiki.com/scp-$SCPNo > $FILE/tmp/$SCPNo
 		cat  $FILE/tmp/$SCPNo | grep -izoP '(?<=Item #: SCP-'$SCPNo')(?s).*(?=« SCP-)'  > $FILE/offline/$SCPNo
-		if [ -s $FILE/offline/$SCPNo ]; then
+		if [ -S $FILE/offline/$SCPNo ]; then
 			stty -echo
-			slowtype $FILE/offline/$SCPNo $speed
+			slowtype $FILE/offline/$SCPNo $SCPSETTINGSSPEED
 		else
 			rm $FILE/offline/$SCPNo
 			cat  $FILE/tmp/$SCPNo | grep -izoP '(?<=SCP-'$SCPNo')(?s).*(?=« SCP-)'  > $FILE/offline/$SCPNo
-			if ! [ -s $FILE/offline/$SCPNo ]; then
+			if ! [ -S $FILE/offline/$SCPNo ]; then
 				rm $FILE/offline/$SCPNo
 				cat  $FILE/tmp/$SCPNo | grep -izoP '(?<=SCP-'$SCPNo')(?s).*(?=page revision)'  > $FILE/offline/$SCPNo
-					if  [ -s $FILE/offline/$SCPNo ]; then
+					if  [ -S $FILE/offline/$SCPNo ]; then
 						slowtype $FILE/offline/$SCPNo
 						
 						else
@@ -106,7 +120,7 @@ if [ $offline == true ]; then
 							rm $FILE/tmp/$SCPNo $FILE/offline/$SCPNo
 						fi
 			else
-				slowtype $FILE/offline/$SCPNo $speed
+				slowtype $FILE/offline/$SCPNo $SCPSETTINGSSPEED
 				rm $FILE/tmp/$SCPNo
 					fi
 		fi
@@ -119,6 +133,6 @@ else
 	cat  $FILE/tmp/$SCPNo | grep -izoP '(?<=Item #: SCP-'$SCPNo')(?s).*(?=« SCP-)' >"$FILE/tmp/$SCPNo)";
 	rm  $FILE/tmp/$SCPNo
 	stty -echo
- 	slowtype $FILE/offline/$SCPNo $speed
+ 	slowtype $FILE/offline/$SCPNo $SCPSETTINGSSPEED
 	stty echo
 fi
