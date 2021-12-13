@@ -1,4 +1,4 @@
-#/usr/bin/
+#!/bin/bash
 function trap_ctrlc ()
 {
 	echo ""
