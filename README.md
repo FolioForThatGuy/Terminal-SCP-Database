@@ -2,7 +2,7 @@
 ## Overview
 A shell script that displays entries from the scp wiki website on the terminal. 
 
-## REQUIRMENTS
+## Requirements
 jq
 <br>
 lynx
