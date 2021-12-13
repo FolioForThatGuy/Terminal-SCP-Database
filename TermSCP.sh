@@ -37,7 +37,7 @@ fi
 if [[ $1 == -s ]] || [[ $1 == --settings ]]; then
 	if  [ -z $2 ]; then
 		echo ""
-		echo "		 $0 $1 speed 		Sets the speed text is written to the screen"
+		echo "		 $0 $1 speed 		Sets the speed text is written to the terminal"
 		echo "		 $0 $1 offline		Changes storage settings"
 		echo ""
 		exit
@@ -45,7 +45,7 @@ if [[ $1 == -s ]] || [[ $1 == --settings ]]; then
 		read -p "Do you want to store SCP documents offline? [true or false] " write
 		case $write in
 		"true" | "T" | "t" | "True")
-		echo "Offline set to true. Now when you open scp documents they will be saved to your hard drive."
+		echo "Offline set to true. Now when you open scp documents they will be saved to your drive."
 		cat <<< $(jq ".offline = true" $FILE/settings) >  $FILE/settings
 		;;
 		"false" | "f" | "F" | "False")
@@ -70,7 +70,7 @@ echo
 if ! [ -z $1 ]; then
 	SCPNo=$1
 else
-	read -p "What SCP would you like?: " SCPNo
+	read -p "What entry would you like to access?: " SCPNo
 fi
 if [ $offline == true ]; then
 	if [ -f "$FILE/offline/$SCPNo" ]; then
