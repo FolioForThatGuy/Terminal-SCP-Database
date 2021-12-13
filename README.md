@@ -13,5 +13,5 @@ pv
 ## Compiling
 Idk, just run this and stick the binary in your bin folder.
 ```shell-script
-shc -f TermSCP.sh -o TermSCP
+shc -f TermSCP.sh -o termscp
 ```
