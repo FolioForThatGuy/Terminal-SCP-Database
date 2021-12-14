@@ -3,8 +3,6 @@
 A shell script that displays entries from the scp wiki website on the terminal. 
 
 ## Requirements
-jq
-<br>
 lynx
 ## Compiling
 Idk, just run this and stick the binary in your bin folder.
