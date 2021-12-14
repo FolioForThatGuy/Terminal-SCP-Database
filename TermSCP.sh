@@ -3,17 +3,15 @@ function slowtype() {
 local text=$(tr -d '\0' < $1)
 for ((i=0;i<${#text};i++));
   do
-      sleep 0.0$(((RANDOM%$SCPSETTINGSSPEED)+0))
+      sleep 0.0$(((RANDOM%$Speed)+0))
       echo -n "${text:i:1}";
 done
 }
 function trap_ctrlc ()
 {
-	echo ""
-	echo ""
-	echo "Disconnected from database"
-	echo ""
-	if [ $SCPSETTINGSOFFLINE == False ]; then
+	echo -e 'Speed='$Speed'\nOffline='$Offline > $FILE/settings
+	echo -e '\n\nDisconnected from database\n'
+	if [ $Offline == False ]; then
 		rm  "$FILE/tmp/$SCPNo)" "$FILE/tmp/$SCPNo"
 	fi
 	stty echo
@@ -22,13 +20,18 @@ function trap_ctrlc ()
 trap "trap_ctrlc" 2
 FILE="$HOME/.scp"
 if [ ! -d $FILE ]; then
-	mkdir "$FILE" "$FILE/offline" "$FILE/offline" "$FILE/tmp";
+	mkdir "$FILE" "$FILE/offline" "$FILE/tmp";
 fi
+if ! [ -f "$FILE/settings" ]; then
+	touch  "$FILE/settings"
+	echo -e 'Speed=5\nOffline=True' > $FILE/settings
+fi 
 if [ ! -d "$FILE/offline" ]; then
 		mkdir "$FILE/offline";
 fi
-export SCPSETTINGSSPEED=5
-export SCPSETTINGSOFFLINE=True
+source $FILE/settings
+Offline=${Offline}
+Speed=${Speed}
 if [[ $1 == -h ]] || [[ $1 == --help ]]; then
 	echo "Use:"
 	echo "$0 [SCP Entry Number]"
@@ -50,27 +53,27 @@ if [[ $1 == -s ]] || [[ $1 == --settings ]]; then
 		case $write in
 		"true" | "T" | "t" | "True" | "yes" | "y" | "Yes")
 		echo "Offline set to true. Now when you open SCP entries they will be saved to your drive."
-		export SCPSETTINGSOFFLINE=True
+		Offline=True
+		echo -e 'Speed='$Speed'\nOffline='$Offline > $FILE/settings
 		;;
 		"false" | "f" | "F" | "False"| "no" | "n" | "No")
 		echo "Offline set to false. SCP entries will no longer be saved to your hard drive."
-		export SCPSETTINGSOFFLINE=False
+		Offline=False
+		echo -e 'Speed='$Speed'\nOffline='$Offline > $FILE/settings
 		if [ "yes" == "yes" ]; then
 			echo ""
-			read -p "Would you like to DELETE previously storred entries? [yes or no] " storage
+			read -p 'Would you like to DELETE previously storred entries? [yes or no] ' storage
 			case $storage in
 			"true" | "T" | "t" | "True" | "yes" | "y" | "Yes")
 			rm $FILE/offline/*
-			echo "Local SCP entries have been deleted"
-			echo ""
+			echo -e 'Local SCP entries have been deleted/n'
+			
 			;;
 			"false" | "f" | "F" | "False"| "no" | "n" | "No")
-			echo ""
+			echo -e '\n'
 			;;
 			*)
-			echo
-				echo "Invalid input"
-				echo
+				echo -e '\nInvalid input\n'
 				;;
 				esac
 			fi
@@ -80,11 +83,14 @@ if [[ $1 == -s ]] || [[ $1 == --settings ]]; then
 			echo "Invalid input"
 			echo
 			;;
+			
 			esac
+			
 		exit
 	elif [ $2 == "speed" ]; then
 		read -p "What speed do you want text to be printed?: " write
-		export SCPSETTINGSSPEED=$write
+		export Speed=$write
+		echo -e 'Speed='$Speed'\nOffline='$Offline > $FILE/settings
 		exit
 	fi
 fi
@@ -97,15 +103,15 @@ else
 fi
 if [ -f "$FILE/offline/$SCPNo" ]; then
 		echo "   Item #: SCP-$SCPNo"
-		slowtype $FILE/offline/$SCPNo $SCPSETTINGSSPEED
+		slowtype $FILE/offline/$SCPNo $Speed
 fi
-if [ $SCPSETTINGSOFFLINE == True ]; then
+if [ $Offline == True ]; then
 		echo "   Item #: SCP-$SCPNo"
 	 	lynx -dump -nolist http://www.scpwiki.com/scp-$SCPNo > $FILE/tmp/$SCPNo
 		cat  $FILE/tmp/$SCPNo | grep -izoP '(?<=Item #: SCP-'$SCPNo')(?s).*(?=« SCP-)'  > $FILE/offline/$SCPNo
 		if [ -S $FILE/offline/$SCPNo ]; then
 			stty -echo
-			slowtype $FILE/offline/$SCPNo $SCPSETTINGSSPEED
+			slowtype $FILE/offline/$SCPNo $Speed
 		else
 			rm $FILE/offline/$SCPNo
 			cat  $FILE/tmp/$SCPNo | grep -izoP '(?<=SCP-'$SCPNo')(?s).*(?=« SCP-)'  > $FILE/offline/$SCPNo
@@ -120,7 +126,7 @@ if [ $SCPSETTINGSOFFLINE == True ]; then
 							rm $FILE/tmp/$SCPNo $FILE/offline/$SCPNo
 						fi
 			else
-				slowtype $FILE/offline/$SCPNo $SCPSETTINGSSPEED
+				slowtype $FILE/offline/$SCPNo $Speed
 				rm $FILE/tmp/$SCPNo
 					fi
 		fi
@@ -133,6 +139,6 @@ else
 	cat  $FILE/tmp/$SCPNo | grep -izoP '(?<=Item #: SCP-'$SCPNo')(?s).*(?=« SCP-)' >"$FILE/tmp/$SCPNo)";
 	rm  $FILE/tmp/$SCPNo
 	stty -echo
- 	slowtype $FILE/offline/$SCPNo $SCPSETTINGSSPEED
+ 	slowtype $FILE/offline/$SCPNo $Speed
 	stty echo
 fi
